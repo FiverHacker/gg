@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: discord-cat-ai-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: TOKEN
+        fromDatabase: false
+        value: YOUR_DISCORD_BOT_TOKEN
+      - key: API_KEY
+        fromDatabase: false
+        value: AIzaSyDtgKODGQeIGxNr2RSPQZJzF-Nh5k2KxFk
