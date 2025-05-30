@@ -1,3 +1,4 @@
+import os
 import discord
 from discord.ext import commands
 import requests
@@ -6,9 +7,13 @@ import random
 from datetime import datetime
 import asyncio
 
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
 # Bot configuration
-TOKEN = 'MTM3NzgwOTMyMzI2NjE1MDUyMQ.GcYc1e.56bZxP-mAoWN4eoUcMZEoFZrZguQJU4jcFOS2U'  # Replace with your bot token
-API_KEY = 'AIzaSyDtgKODGQeIGxNr2RSPQZJzF-Nh5k2KxFk'  # AI Studio API key
+TOKEN = os.getenv('DISCORD_TOKEN')  # From environment variables
+API_KEY = os.getenv('AI_API_KEY')   # From environment variables
 PREFIX = '!'  # Bot prefix
 
 # Initialize bot with intents
@@ -60,12 +65,14 @@ async def call_ai_studio(prompt):
         
         if 'candidates' in result and result['candidates']:
             return result['candidates'][0]['content']['parts'][0]['text']
-        else:
-            return "Sorry, I couldn't generate a response. Maybe try a different question?"
+        return "Sorry, I couldn't generate a response. Maybe try a different question?"
     
+    except requests.exceptions.HTTPError as err:
+        print(f"HTTP Error: {err}")
+        return "Meow... the API seems to be taking a cat nap. Try again later!"
     except Exception as e:
         print(f"API Error: {e}")
-        return "Meow... something went wrong with the API. Maybe the servers are taking a cat nap?"
+        return "Purr... something went wrong with my cat-like processing."
 
 # Bot events
 @bot.event
@@ -87,35 +94,39 @@ async def on_command_error(ctx, error):
         await ctx.send(embed=embed)
     else:
         print(f"Error: {error}")
+        embed = discord.Embed(
+            title="Error Occurred",
+            description="Purr... something went wrong. The error has been logged.",
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
 
 # Commands
 @bot.command(name='ask', help='Ask the AI a question')
 async def ask(ctx, *, question):
-    # Send initial "thinking" message
     thinking_msg = random.choice(CAT_RESPONSES)
     thinking_embed = discord.Embed(
         title="🐱 Cat AI Thinking...",
         description=thinking_msg,
         color=random_rgb()
     )
-    thinking_embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+    thinking_embed.set_footer(text=f"Requested by {ctx.author.display_name}", 
+                            icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
     
     message = await ctx.send(embed=thinking_embed)
     
-    # Call the AI API
     response = await call_ai_studio(question)
     
-    # Create response embed
     embed = discord.Embed(
-        title=f"🐾 AI Response to: {question}",
+        title=f"🐾 AI Response to: {question[:100]}...",
         description=response,
         color=random_rgb(),
         timestamp=datetime.utcnow()
     )
     embed.set_author(name="Cat AI Assistant", icon_url=bot.user.avatar.url)
-    embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+    embed.set_footer(text=f"Requested by {ctx.author.display_name}", 
+                    icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
     
-    # Edit the original message with the response
     await message.edit(embed=embed)
 
 @bot.command(name='catfact', help='Get a random cat fact')
@@ -138,7 +149,8 @@ async def catfact(ctx):
         description=random.choice(facts),
         color=random_rgb()
     )
-    embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+    embed.set_footer(text=f"Requested by {ctx.author.display_name}", 
+                    icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
     await ctx.send(embed=embed)
 
 @bot.command(name='purr', help='Get a comforting cat message')
@@ -159,14 +171,15 @@ async def purr(ctx):
         description=random.choice(comforts),
         color=random_rgb()
     )
-    embed.set_footer(text=f"For {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+    embed.set_footer(text=f"For {ctx.author.display_name}", 
+                    icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
     await ctx.send(embed=embed)
 
 @bot.command(name='invite', help='Get the bot invite link')
 async def invite(ctx):
     embed = discord.Embed(
         title="Invite Cat AI to Your Server!",
-        description="[Click here to invite me!](https://discord.com/oauth2/authorize?client_id=YOUR_BOT_ID&permissions=274878032960&scope=bot)",
+        description=f"[Click here to invite me!](https://discord.com/oauth2/authorize?client_id={bot.user.id}&permissions=274878032960&scope=bot)",
         color=random_rgb()
     )
     embed.set_footer(text="Meow! Thanks for inviting me!")
