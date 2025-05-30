@@ -3,14 +3,17 @@ import discord
 from discord.ext import commands
 import requests
 import random
-from datetime import datetime
+import asyncio
 
-# Configuration
-TOKEN = os.environ['DISCORD_TOKEN']  # Will raise error if not set
-API_KEY = os.environ.get('AI_API_KEY', 'AIzaSyDtgKODGQeIGxNr2RSPQZJzF-Nh5k2KxFk')
+# Verify token exists
+DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
+if not DISCORD_TOKEN:
+    raise RuntimeError("DISCORD_TOKEN environment variable not set")
+
+API_KEY = os.getenv('AI_API_KEY', 'AIzaSyDtgKODGQeIGxNr2RSPQZJzF-Nh5k2KxFk')
 PREFIX = '!'
 
-# Initialize bot
+# Initialize bot with required intents
 intents = discord.Intents.default()
 intents.message_content = True
 
@@ -21,10 +24,10 @@ bot = commands.Bot(
 )
 
 # Cat-themed responses
-CAT_THINKING = [
-    "🐱 Meow! Let me think...",
-    "🐾 Processing with my cat brain...",
-    "😸 Consulting the feline hivemind...",
+CAT_RESPONSES = [
+    "🐱 Meow! Let me think about that...",
+    "🐾 Processing your request with my feline brain...",
+    "😸 Consulting the cat hivemind...",
     "Purrr... generating response..."
 ]
 
@@ -44,7 +47,7 @@ async def call_ai_api(prompt):
             url,
             params=params,
             json={"contents": [{"parts": [{"text": prompt}]}]},
-            timeout=15
+            timeout=10
         )
         response.raise_for_status()
         data = response.json()
@@ -56,17 +59,17 @@ async def call_ai_api(prompt):
 @bot.event
 async def on_ready():
     print(f'Successfully logged in as {bot.user}')
-    await bot.change_presence(activity=discord.Activity(
+    activity = discord.Activity(
         type=discord.ActivityType.watching,
         name=f"{len(bot.guilds)} servers | {PREFIX}help"
-    ))
+    )
+    await bot.change_presence(activity=activity)
 
 @bot.command()
 async def ask(ctx, *, question):
     """Ask the AI anything"""
-    thinking = random.choice(CAT_THINKING)
     embed = discord.Embed(
-        title=thinking,
+        title=random.choice(CAT_RESPONSES),
         color=random_color()
     )
     msg = await ctx.send(embed=embed)
@@ -74,7 +77,7 @@ async def ask(ctx, *, question):
     response = await call_ai_api(question)
     
     embed = discord.Embed(
-        title=f"🐾 AI Response",
+        title="🐾 AI Response",
         description=response,
         color=random_color()
     )
@@ -116,7 +119,8 @@ async def help(ctx):
 if __name__ == '__main__':
     print("Starting bot...")
     try:
-        bot.run(TOKEN)
+        bot.run(DISCORD_TOKEN)
+    except discord.LoginFailure:
+        print("Invalid Discord token. Please check your DISCORD_TOKEN environment variable.")
     except Exception as e:
         print(f"Failed to start bot: {e}")
-        raise
