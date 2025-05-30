@@ -3,19 +3,19 @@ import discord
 from discord.ext import commands
 import requests
 import random
-import asyncio
+from datetime import datetime
 
-# Configuration - using Render's environment variables
-DISCORD_TOKEN = os.environ.get('DISCORD_TOKEN')
+# Configuration
+DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 if not DISCORD_TOKEN:
-    raise RuntimeError("❌ DISCORD_TOKEN environment variable not set - please configure in Render.com settings")
+    raise RuntimeError("DISCORD_TOKEN environment variable not set")
 
-API_KEY = os.environ.get('AI_API_KEY', 'AIzaSyDtgKODGQeIGxNr2RSPQZJzF-Nh5k2KxFk')
+API_KEY = os.getenv('AI_API_KEY', 'AIzaSyDtgKODGQeIGxNr2RSPQZJzF-Nh5k2KxFk')
 PREFIX = '!'
 
 # Initialize bot with required intents
 intents = discord.Intents.default()
-intents.message_content = True  # Required for message content
+intents.message_content = True  # Required for message commands
 
 bot = commands.Bot(
     command_prefix=PREFIX,
@@ -25,7 +25,7 @@ bot = commands.Bot(
 
 # Cat-themed responses
 CAT_RESPONSES = [
-    "🐱 Meow! Let me think about that...", 
+    "🐱 Meow! Let me think about that...",
     "🐾 Processing your request with my feline brain...",
     "😸 Consulting the cat hivemind...",
     "Purrr... generating response..."
@@ -34,7 +34,7 @@ CAT_RESPONSES = [
 def random_color():
     return discord.Color.from_rgb(
         random.randint(50, 200),
-        random.randint(50, 200), 
+        random.randint(50, 200),
         random.randint(50, 200)
     )
 
@@ -47,7 +47,7 @@ async def call_ai_api(prompt):
             url,
             params=params,
             json={"contents": [{"parts": [{"text": prompt}]}]},
-            timeout=10
+            timeout=15
         )
         response.raise_for_status()
         data = response.json()
@@ -60,14 +60,18 @@ async def call_ai_api(prompt):
 async def on_ready():
     print(f'✅ Successfully logged in as {bot.user} (ID: {bot.user.id})')
     activity = discord.Activity(
-        type=discord.ActivityType.listening,
-        name=f"{PREFIX}help in {len(bot.guilds)} servers"
+        type=discord.ActivityType.watching,
+        name=f"{len(bot.guilds)} servers | {PREFIX}help"
     )
     await bot.change_presence(activity=activity)
 
 @bot.command()
 async def ask(ctx, *, question):
     """Ask the AI anything"""
+    if len(question) > 200:
+        await ctx.send("❌ Question too long. Please keep under 200 characters.")
+        return
+
     embed = discord.Embed(
         title=random.choice(CAT_RESPONSES),
         color=random_color()
@@ -76,17 +80,62 @@ async def ask(ctx, *, question):
     
     response = await call_ai_api(question)
     
+    # Ensure response isn't too long for Discord
+    if len(response) > 2000:
+        response = response[:1997] + "..."
+
     embed = discord.Embed(
         title="🐾 AI Response",
         description=response,
         color=random_color()
     )
+    embed.set_footer(text=f"Requested by {ctx.author.display_name}")
     await msg.edit(embed=embed)
 
 @bot.command()
+async def invite(ctx):
+    """Get bot invite link"""
+    permissions = 274877906944  # Basic permissions
+    invite_url = f"https://discord.com/oauth2/authorize?client_id={bot.user.id}&permissions={permissions}&scope=bot"
+    
+    embed = discord.Embed(
+        title="Invite me to your server!",
+        description=f"[Click here]({invite_url})",
+        color=random_color()
+    )
+    await ctx.send(embed=embed)
+
+@bot.command()
 async def ping(ctx):
-    """Check if bot is alive"""
-    await ctx.send(f"🐱 Pong! Latency: {round(bot.latency * 1000)}ms")
+    """Check bot latency"""
+    latency = round(bot.latency * 1000)
+    embed = discord.Embed(
+        title="🏓 Pong!",
+        description=f"Latency: {latency}ms",
+        color=random_color()
+    )
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def help(ctx):
+    """Show help message"""
+    embed = discord.Embed(
+        title="🐱 Cat AI Help",
+        description=f"Prefix: `{PREFIX}`",
+        color=random_color()
+    )
+    
+    commands = [
+        ("ask [question]", "Ask the AI anything"),
+        ("invite", "Get bot invite link"),
+        ("ping", "Check bot latency"),
+        ("help", "Show this message")
+    ]
+    
+    for name, desc in commands:
+        embed.add_field(name=f"`{PREFIX}{name}`", value=desc, inline=False)
+    
+    await ctx.send(embed=embed)
 
 if __name__ == '__main__':
     print("🚀 Starting bot...")
