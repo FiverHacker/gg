@@ -3,30 +3,37 @@ import discord
 from discord.ext import commands
 import requests
 import random
+from flask import Flask
 
-# Load token from Render environment variables
-TOKEN = os.getenv("DISCORD_TOKEN")
+# Flask app for Render.com health check
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Discord Bot is running", 200
+
+# Discord Bot Configuration
+TOKEN = os.getenv('DISCORD_TOKEN')
 if not TOKEN:
-    raise RuntimeError("❌ DISCORD_TOKEN not set in environment variables!")
+    raise RuntimeError("DISCORD_TOKEN environment variable not set")
 
-# AI API Key (Gemini Pro)
-API_KEY = "AIzaSyDtgKODGQeIGxNr2RSPQZJzF-Nh5k2KxFk"  
-PREFIX = "!"
+API_KEY = os.getenv('AI_API_KEY', 'AIzaSyDtgKODGQeIGxNr2RSPQZJzF-Nh5k2KxFk')
+PREFIX = '!'
 
-# Enable required intents
+# Initialize bot
 intents = discord.Intents.default()
-intents.message_content = True  # Required for commands
+intents.message_content = True
 
 bot = commands.Bot(
     command_prefix=PREFIX,
     intents=intents,
-    help_command=None  # Disable default help command
+    help_command=None
 )
 
 # Cat-themed responses
 CAT_RESPONSES = [
-    "🐱 Meow! Let me think...",
-    "🐾 Processing with my feline brain...",
+    "🐱 Meow! Let me think about that...",
+    "🐾 Processing your request with my feline brain...",
     "😸 Consulting the cat hivemind...",
     "Purrr... generating response..."
 ]
@@ -54,17 +61,16 @@ async def call_ai_api(prompt):
         return data['candidates'][0]['content']['parts'][0]['text']
     except Exception as e:
         print(f"API Error: {e}")
-        return "😿 Meow... something went wrong. Try again later!"
+        return "😿 Meow... something went wrong. Please try again later."
 
 @bot.event
 async def on_ready():
-    print(f"✅ Bot is LIVE as {bot.user}!")
-    await bot.change_presence(
-        activity=discord.Activity(
-            type=discord.ActivityType.watching,
-            name=f"{len(bot.guilds)} servers | {PREFIX}help"
-        )
+    print(f'✅ Successfully logged in as {bot.user} (ID: {bot.user.id})')
+    activity = discord.Activity(
+        type=discord.ActivityType.watching,
+        name=f"{len(bot.guilds)} servers | {PREFIX}help"
     )
+    await bot.change_presence(activity=activity)
 
 @bot.command()
 async def ask(ctx, *, question):
@@ -79,7 +85,7 @@ async def ask(ctx, *, question):
     
     embed = discord.Embed(
         title="🐾 AI Response",
-        description=response[:2000],  # Ensure it fits in Discord
+        description=response[:2000],  # Discord has 2000 character limit
         color=random_color()
     )
     await msg.edit(embed=embed)
@@ -87,27 +93,24 @@ async def ask(ctx, *, question):
 @bot.command()
 async def ping(ctx):
     """Check bot latency"""
-    await ctx.send(f"🏓 Pong! {round(bot.latency * 1000)}ms")
+    await ctx.send(f'🏓 Pong! {round(bot.latency * 1000)}ms')
 
-@bot.command()
-async def invite(ctx):
-    """Get bot invite link"""
-    invite_url = f"https://discord.com/oauth2/authorize?client_id={bot.user.id}&permissions=274877906944&scope=bot"
-    embed = discord.Embed(
-        title="🔗 Invite Me!",
-        description=f"[Click Here]({invite_url})",
-        color=random_color()
-    )
-    await ctx.send(embed=embed)
+def run_flask():
+    app.run(host='0.0.0.0', port=10000)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
+    import threading
+    # Start Flask server in a separate thread
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
+    
     print("🚀 Starting bot...")
     try:
         bot.run(TOKEN)
     except discord.LoginFailure:
-        print("❌ Token rejected. Fix this:")
-        print("1. Generate a NEW token in Discord Developer Portal")
-        print("2. Update Render.com environment variables")
-        print("3. Enable ALL intents (Presence, Server Members, Message Content)")
+        print("❌ Invalid Discord token. Please verify:")
+        print("1. You copied the ENTIRE token correctly")
+        print("2. The token is set in Render.com environment variables")
+        print("3. The token hasn't been reset on Discord Developer Portal")
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        print(f"❌ Failed to start bot: {e}")
