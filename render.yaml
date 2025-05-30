@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: discord-cat-ai-bot
+    name: discord-ai-bot
     env: python
     buildCommand: |
       python -m pip install --upgrade pip
@@ -9,7 +9,9 @@ services:
     envVars:
       - key: DISCORD_TOKEN
         fromDatabase: false
-        value: your_bot_token_here  # REPLACE WITH YOUR ACTUAL TOKEN
+        value: "MTM3NzgwOTMyMzI2NjE1MDUyMQ.GAaAsH.L8T5fMFwfLM2N_z4mK20rkpIn0vJR6D5YbGWQI"
       - key: AI_API_KEY
         fromDatabase: false
-        value: AIzaSyDtgKODGQeIGxNr2RSPQZJzF-Nh5k2KxFk
+        value: "AIzaSyDtgKODGQeIGxNr2RSPQZJzF-Nh5k2KxFk"
+    healthCheckPath: /
+    port: 10000
