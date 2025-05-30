@@ -5,17 +5,17 @@ import requests
 import random
 import asyncio
 
-# Verify token exists
-DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
+# Configuration - using Render's environment variables
+DISCORD_TOKEN = os.environ.get('DISCORD_TOKEN')
 if not DISCORD_TOKEN:
-    raise RuntimeError("DISCORD_TOKEN environment variable not set")
+    raise RuntimeError("❌ DISCORD_TOKEN environment variable not set - please configure in Render.com settings")
 
-API_KEY = os.getenv('AI_API_KEY', 'AIzaSyDtgKODGQeIGxNr2RSPQZJzF-Nh5k2KxFk')
+API_KEY = os.environ.get('AI_API_KEY', 'AIzaSyDtgKODGQeIGxNr2RSPQZJzF-Nh5k2KxFk')
 PREFIX = '!'
 
 # Initialize bot with required intents
 intents = discord.Intents.default()
-intents.message_content = True
+intents.message_content = True  # Required for message content
 
 bot = commands.Bot(
     command_prefix=PREFIX,
@@ -25,7 +25,7 @@ bot = commands.Bot(
 
 # Cat-themed responses
 CAT_RESPONSES = [
-    "🐱 Meow! Let me think about that...",
+    "🐱 Meow! Let me think about that...", 
     "🐾 Processing your request with my feline brain...",
     "😸 Consulting the cat hivemind...",
     "Purrr... generating response..."
@@ -34,7 +34,7 @@ CAT_RESPONSES = [
 def random_color():
     return discord.Color.from_rgb(
         random.randint(50, 200),
-        random.randint(50, 200),
+        random.randint(50, 200), 
         random.randint(50, 200)
     )
 
@@ -58,10 +58,10 @@ async def call_ai_api(prompt):
 
 @bot.event
 async def on_ready():
-    print(f'Successfully logged in as {bot.user}')
+    print(f'✅ Successfully logged in as {bot.user} (ID: {bot.user.id})')
     activity = discord.Activity(
-        type=discord.ActivityType.watching,
-        name=f"{len(bot.guilds)} servers | {PREFIX}help"
+        type=discord.ActivityType.listening,
+        name=f"{PREFIX}help in {len(bot.guilds)} servers"
     )
     await bot.change_presence(activity=activity)
 
@@ -81,46 +81,21 @@ async def ask(ctx, *, question):
         description=response,
         color=random_color()
     )
-    embed.set_footer(text=f"Requested by {ctx.author.display_name}")
     await msg.edit(embed=embed)
 
 @bot.command()
-async def invite(ctx):
-    """Get bot invite link"""
-    permissions = 274877906944  # Basic permissions
-    invite_url = f"https://discord.com/oauth2/authorize?client_id={bot.user.id}&permissions={permissions}&scope=bot"
-    
-    embed = discord.Embed(
-        title="Invite me to your server!",
-        description=f"[Click here]({invite_url})",
-        color=random_color()
-    )
-    await ctx.send(embed=embed)
-
-@bot.command()
-async def help(ctx):
-    """Show help message"""
-    embed = discord.Embed(
-        title="🐱 Cat AI Help",
-        description=f"Prefix: `{PREFIX}`",
-        color=random_color()
-    )
-    commands_list = [
-        ("ask [question]", "Ask the AI anything"),
-        ("invite", "Get bot invite link"),
-        ("help", "Show this message")
-    ]
-    
-    for name, value in commands_list:
-        embed.add_field(name=f"`{PREFIX}{name}`", value=value, inline=False)
-    
-    await ctx.send(embed=embed)
+async def ping(ctx):
+    """Check if bot is alive"""
+    await ctx.send(f"🐱 Pong! Latency: {round(bot.latency * 1000)}ms")
 
 if __name__ == '__main__':
-    print("Starting bot...")
+    print("🚀 Starting bot...")
     try:
         bot.run(DISCORD_TOKEN)
     except discord.LoginFailure:
-        print("Invalid Discord token. Please check your DISCORD_TOKEN environment variable.")
+        print("❌ Invalid Discord token. Please verify:")
+        print("1. You copied the ENTIRE token correctly")
+        print("2. The token is set in Render.com environment variables")
+        print("3. The token hasn't been reset on Discord Developer Portal")
     except Exception as e:
-        print(f"Failed to start bot: {e}")
+        print(f"❌ Failed to start bot: {e}")
