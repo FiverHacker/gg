@@ -9,7 +9,7 @@ services:
     envVars:
       - key: DISCORD_TOKEN
         fromDatabase: false
-        value: MTM3NzgwOTMyMzI2NjE1MDUyMQ.GcYc1e.56bZxP-mAoWN4eoUcMZEoFZrZguQJU4jcFOS2U
+        value: your_bot_token_here  # REPLACE WITH YOUR ACTUAL TOKEN
       - key: AI_API_KEY
         fromDatabase: false
         value: AIzaSyDtgKODGQeIGxNr2RSPQZJzF-Nh5k2KxFk
