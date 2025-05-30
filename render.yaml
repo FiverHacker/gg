@@ -9,6 +9,6 @@ services:
     envVars:
       - key: DISCORD_TOKEN
         fromDatabase: false
-        value: "MTM3NzgwOTMyMzI2NjE1MDUyMQ.GAaAsH.L8T5fMFwfLM2N_z4mK20rkpIn0vJR6D5YbGWQI"  # Replace with your token
+        value: "YOUR_NEW_BOT_TOKEN_HERE"  # REPLACE WITH NEW TOKEN
     healthCheckPath: /
     port: 8080
