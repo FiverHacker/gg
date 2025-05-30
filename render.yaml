@@ -9,9 +9,6 @@ services:
     envVars:
       - key: DISCORD_TOKEN
         fromDatabase: false
-        value: "MTM3NzgwOTMyMzI2NjE1MDUyMQ.GAaAsH.L8T5fMFwfLM2N_z4mK20rkpIn0vJR6D5YbGWQI"
-      - key: AI_API_KEY
-        fromDatabase: false
-        value: "AIzaSyDtgKODGQeIGxNr2RSPQZJzF-Nh5k2KxFk"
+        value: "MTM3NzgwOTMyMzI2NjE1MDUyMQ.GAaAsH.L8T5fMFwfLM2N_z4mK20rkpIn0vJR6D5YbGWQI"  # Replace with your token
     healthCheckPath: /
-    port: 10000
+    port: 8080
